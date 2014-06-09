@@ -22,12 +22,21 @@ package ch.schrimpf.core;
 
 import twitter4j.*;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.*;
 
+/**
+ *
+ */
 public class TwitterCrawler implements Runnable {
 
     public static final int MAX_CRAWLS_PER_RUN = 400;
     public static final int CRAWL_WINDOW_SIZE = 15 * 60 * 1000;
+
+    public static final int DEFAULT_QUERY_LIMIT = 20;
+    public static final String DEFAULT_LOCALE = "en";
+    public static final String DEFAULT_LANG = "en";
 
     private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(TwitterCrawler.class.getName());
     private final Twitter twitter;
@@ -36,16 +45,49 @@ public class TwitterCrawler implements Runnable {
 
     private boolean running = false;
 
+    private int tweets = 0;
+
+    /**
+     * Instantiates a new TwitterCrawler and start it as e new thread.
+     *
+     * @param csv to write in
+     * @param twitter to crawl on
+     * @param query to execute
+     */
     public TwitterCrawler(CSVOutput csv, Twitter twitter, String query) {
         this.csv = csv;
         this.twitter = twitter;
-        this.query = new Query(query);
-        this.query.setCount(20);
-        this.query.setLocale("en");
-        this.query.setLang("en");
+        this.query = initQuery(query);
         new Thread(this).start();
     }
 
+    /**
+     *
+     * @param queryString describes keywords and filters
+     * @return an initialized Query
+     */
+    private Query initQuery(String queryString)
+    {
+        Query query = new Query(queryString);
+        try {
+            Properties prop = new Properties();
+            prop.load(new FileInputStream("easyTwitterCrawler.properties"));
+            query.setCount(Integer.parseInt(prop.getProperty("queryLimit")));
+            query.setLocale(prop.getProperty("locale"));
+            query.setLang(prop.getProperty("lang"));
+        } catch (IOException e) {
+            // Properties could not be load
+            query.setCount(DEFAULT_QUERY_LIMIT);
+            query.setLocale(DEFAULT_LOCALE);
+            query.setLang(DEFAULT_LANG);
+        }
+        return query;
+    }
+
+    /**
+     * Crawls tweets regarding to the limitation defined by Twitter.
+     * Runs until thread is triggered to stop or system exit.
+     */
     @Override
     public void run() {
 
@@ -53,6 +95,7 @@ public class TwitterCrawler implements Runnable {
         while (running) {
             crwal(MAX_CRAWLS_PER_RUN);
             try {
+                // sleep until crawling tweets is allowed again
                 Thread.sleep(CRAWL_WINDOW_SIZE);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -60,26 +103,37 @@ public class TwitterCrawler implements Runnable {
         }
     }
 
+    /**
+     * Performs a single crawl step according to the previous initialized query
+     * until the specified limit is reached. Received tweets are stored in the
+     * *.csv specified in the easyTwitterCrawler.properties file.
+     *
+     * TODO make selecting values flexible
+     *
+     * @param limit to stop on
+     */
     public void crwal(int limit) {
+        LOG.info("receiving tweets...");
         int i = 0;
-        int k = 0;
-        while (i < limit && k < 100) {
+        while (i < limit && running) {
             try {
-                LOG.info("receiving tweets...");
                 for (Status status : twitter.search(query).getTweets()) {
-                    List<String> line = new ArrayList<>();
-                    Collections.addAll(Arrays.asList(status.getId(), status.getCreatedAt(), status.getText(), status.getUser(), status.getPlace(), status.getLang()));
-                    csv.writeResult(line);
+                    String[] line = {String.valueOf(status.getId()), String.valueOf(status.getCreatedAt()), status.getText(), String.valueOf(status.getUser()), String.valueOf(status.getPlace()), status.getLang()};
+                    csv.writeResult(Arrays.asList(line));
                     i++;
                 }
-                k++;
-                LOG.info("receiving tweets finished");
             } catch (TwitterException e) {
                 LOG.warning("could not process tweets");
             }
         }
+        tweets += i;
+        LOG.info(i + " tweets received in this crawl");
+        LOG.info("totally " + tweets + " received");
     }
 
+    /**
+     * simply stops the crawler after it has finished the current run
+     */
     public void stop() {
         running = true;
     }
