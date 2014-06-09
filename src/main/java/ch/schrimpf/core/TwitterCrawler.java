@@ -37,6 +37,9 @@ public class TwitterCrawler implements Runnable {
     public static final int DEFAULT_QUERY_LIMIT = 20;
     public static final String DEFAULT_LOCALE = "en";
     public static final String DEFAULT_LANG = "en";
+    // default is London UK
+    public static final GeoLocation DEFAULT_GEO_LOCATION = new GeoLocation(51.30, 0.08);
+    public static final double DEFAULT_RADIUS = 5;
 
     private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(TwitterCrawler.class.getName());
     private final Twitter twitter;
@@ -75,11 +78,15 @@ public class TwitterCrawler implements Runnable {
             query.setCount(Integer.parseInt(prop.getProperty("queryLimit")));
             query.setLocale(prop.getProperty("locale"));
             query.setLang(prop.getProperty("lang"));
+            GeoLocation location = new GeoLocation(Double.parseDouble(prop.getProperty("latitude")),Double.parseDouble(prop.getProperty("longitude")));
+            double radius = Double.parseDouble(prop.getProperty("radius"));
+            query.setGeoCode(location, radius, Query.KILOMETERS);
         } catch (IOException e) {
             // Properties could not be load
             query.setCount(DEFAULT_QUERY_LIMIT);
             query.setLocale(DEFAULT_LOCALE);
             query.setLang(DEFAULT_LANG);
+            query.setGeoCode(DEFAULT_GEO_LOCATION, DEFAULT_RADIUS, Query.KILOMETERS);
         }
         return query;
     }
