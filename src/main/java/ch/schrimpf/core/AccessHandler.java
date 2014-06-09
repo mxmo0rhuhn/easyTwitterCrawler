@@ -48,8 +48,9 @@ public class AccessHandler {
             FileOutputStream fout = new FileOutputStream("token.ser");
             ObjectOutputStream oos = new ObjectOutputStream(fout);
             oos.writeObject(accessToken);
+            LOG.info("token saved in token.ser");
         } catch (IOException e) {
-            LOG.log(Level.SEVERE, "Could not store access token.");
+            LOG.severe("Could not store access token.");
         }
         return accessToken;
     }
@@ -58,7 +59,9 @@ public class AccessHandler {
         try {
             FileInputStream fin = new FileInputStream("token.ser");
             ObjectInputStream ois = new ObjectInputStream(fin);
-            return (AccessToken) ois.readObject();
+            AccessToken token = (AccessToken) ois.readObject();
+            LOG.info("stored token loaded");
+            return token;
         } catch (IOException | ClassNotFoundException e) {
             LOG.log(Level.WARNING, "could not dematerialize stored token");
         }
@@ -68,9 +71,9 @@ public class AccessHandler {
             return register(prop.getProperty("apiKey"), prop.getProperty("apiSecret"));
         } catch (IOException e) {
             // Properties could not be load
-            LOG.log(Level.SEVERE, "could not get api key properties");
+            LOG.severe("could not get api key properties");
         } catch (TwitterException e) {
-            LOG.log(Level.SEVERE, "could not get new token");
+            LOG.severe("could not get new token");
         }
         return null;
     }

@@ -12,13 +12,7 @@ public class TwitterCrawler implements Runnable {
 
         this.query = new Query(query);
 
-
-
-        /*
-        twitter = new TwitterFactory().getInstance();
-        twitter.setOAuthConsumer(key, secret);
-        accessToken = twitter.getOAuthAccessToken();
-        new Thread(this).start();*/
+        new Thread(this).start();
     }
 
     @Override

@@ -20,8 +20,10 @@
 
 package ch.schrimpf;
 
+import ch.schrimpf.core.AccessHandler;
 import ch.schrimpf.core.TwitterCrawler;
 import twitter4j.TwitterException;
+import twitter4j.auth.AccessToken;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -40,12 +42,6 @@ public class App
      * @author Max Schrimpf
      */
     public App() {
-        // Your API key
-        String apiKey = null;
-
-        // Your APIsecret
-        String apiSecret = null;
-
         // Mandatory Query that should be executed
         String query = null;
 
@@ -59,12 +55,7 @@ public class App
 
         Properties prop = new Properties();
         try {
-            prop.load(new FileInputStream("api.key"));
             prop.load(new FileInputStream("easyTwitterCrawler.properties"));
-
-            apiKey = prop.getProperty("apiKey", apiKey);
-            apiSecret = prop.getProperty("apiSecret", apiSecret);
-
             query = prop.getProperty("query", query);
             duration = Integer.parseInt(prop.getProperty("duration", "" + duration));
             outputPath = prop.getProperty("outputPath", outputPath);
@@ -72,21 +63,23 @@ public class App
             // Properties could not be load - proceed with defaults
         }
 
-        if( apiKey == null || apiSecret == null || query == null) {
-            LOG.log(Level.SEVERE, "No API key or no query specified - exiting");
+        if(query == null) {
+            LOG.log(Level.SEVERE, "No query specified - exiting");
             System.exit(1);
         }
 
-        LOG.log(Level.INFO, "SentimentComputation Config: ");
+        LOG.log(Level.INFO, "Crawler Config: ");
         LOG.log(Level.INFO, "query = " + query);
         LOG.log(Level.INFO, "outputPath = " + outputPath);
         LOG.log(Level.INFO, "duration = " + duration);
-
-        try {
-            new TwitterCrawler(apiKey, apiSecret, query);
-        } catch (TwitterException e) {
-            LOG.log(Level.SEVERE, "Could not authenticate");
-            e.printStackTrace();
+        AccessToken token = AccessHandler.loadToken();
+        if(token != null) {
+            new TwitterCrawler(token, query);
+        }
+        else
+        {
+            LOG.log(Level.SEVERE, "could not get token - exiting");
+            System.exit(1);
         }
 
         if (duration > 0) {
