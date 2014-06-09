@@ -24,3 +24,7 @@ hs_err_pid*
 
 # API key
 *.key
+*.ser
+
+# output files
+*.csv
