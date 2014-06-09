@@ -40,7 +40,7 @@ public class CSVOutput {
 
     }
 
-    private void writeResult(List<String> result) {
+    public void writeResult(List<String> result) {
         try {
             String[] entries;
 
