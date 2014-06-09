@@ -40,6 +40,9 @@ public class TwitterCrawler implements Runnable {
         this.csv = csv;
         this.twitter = twitter;
         this.query = new Query(query);
+        this.query.setCount(20);
+        this.query.setLocale("en");
+        this.query.setLang("en");
         new Thread(this).start();
     }
 
@@ -59,15 +62,18 @@ public class TwitterCrawler implements Runnable {
 
     public void crwal(int limit) {
         int i = 0;
-
-        while (i < limit) {
+        int k = 0;
+        while (i < limit && k < 100) {
             try {
+                LOG.info("receiving tweets...");
                 for (Status status : twitter.search(query).getTweets()) {
                     List<String> line = new ArrayList<>();
                     Collections.addAll(Arrays.asList(status.getId(), status.getCreatedAt(), status.getText(), status.getUser(), status.getPlace(), status.getLang()));
                     csv.writeResult(line);
                     i++;
                 }
+                k++;
+                LOG.info("receiving tweets finished");
             } catch (TwitterException e) {
                 LOG.warning("could not process tweets");
             }
