@@ -58,7 +58,7 @@ public class CSVOutput {
         try {
             writer.close();
         } catch (IOException e) {
-            LOG.severe("Could not close ouptut file");
+            LOG.severe("Could not close output file");
         }
     }
 }

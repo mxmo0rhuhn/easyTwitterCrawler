@@ -40,7 +40,7 @@ public class App {
      * Provides the entrance point for the application.
      * Reads the configuration and launches the crawler for a given time
      *
-     * @author Max Schrimpf
+     * Created by Max Schrimpf
      */
     public App() {
         // Mandatory Query that should be executed
@@ -54,7 +54,7 @@ public class App {
         Properties prop = new Properties();
         try {
             prop.load(new FileInputStream("easyTwitterCrawler.properties"));
-            query = prop.getProperty("query", query);
+            query = prop.getProperty("query");
             duration = Integer.parseInt(prop.getProperty("duration", "" + duration));
             outputPath = prop.getProperty("outputPath", outputPath);
         } catch (IOException e) {
