@@ -21,8 +21,8 @@
 package ch.schrimpf;
 
 import ch.schrimpf.core.AccessHandler;
+import ch.schrimpf.core.CSVOutput;
 import ch.schrimpf.core.TwitterCrawler;
-import twitter4j.TwitterException;
 import twitter4j.auth.AccessToken;
 
 import java.io.FileInputStream;
@@ -31,9 +31,10 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class App
-{
+public class App {
     private static final Logger LOG = Logger.getLogger(App.class.getName());
+    private CSVOutput csvOutput;
+    private TwitterCrawler crawler;
 
     /**
      * Provides the entrance point for the application.
@@ -44,14 +45,11 @@ public class App
     public App() {
         // Mandatory Query that should be executed
         String query = null;
-
         // duration of the analysis in minutes
         // -1 for manual ending
         Integer duration = -1;
-
         // CSV File for saving the tweets
         String outputPath = "easyTwitterCrawler.csv";
-
 
         Properties prop = new Properties();
         try {
@@ -63,31 +61,37 @@ public class App
             // Properties could not be load - proceed with defaults
         }
 
-        if(query == null) {
+        if (query == null) {
             LOG.log(Level.SEVERE, "No query specified - exiting");
-            System.exit(1);
+            exit(1);
         }
 
         LOG.log(Level.INFO, "Crawler Config: ");
         LOG.log(Level.INFO, "query = " + query);
         LOG.log(Level.INFO, "outputPath = " + outputPath);
         LOG.log(Level.INFO, "duration = " + duration);
+
         AccessToken token = AccessHandler.loadToken();
-        if(token != null) {
-            new TwitterCrawler(token, query);
+        try {
+            csvOutput = new CSVOutput(outputPath);
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "Could open output file - exiting");
+            exit(1);
         }
-        else
-        {
-            LOG.log(Level.SEVERE, "could not get token - exiting");
-            System.exit(1);
+
+        if (token != null) {
+            crawler = new TwitterCrawler(token, query);
+        } else {
+            LOG.log(Level.SEVERE, "Could not get token - exiting");
+            exit(1);
         }
 
         if (duration > 0) {
             int sleepTime = duration * 1000 * 60;
             try {
-                Thread.sleep(duration);
+                Thread.sleep(sleepTime);
                 exit();
-            } catch(InterruptedException ex) {
+            } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
                 LOG.log(Level.SEVERE, "Could not sleep for the given duration");
                 exit();
@@ -95,11 +99,17 @@ public class App
         }
     }
 
-    public static void main(String[] args) {
-        new App();
+    public void exit(int status) {
+        csvOutput.close();
+        crawler.stop();
+        System.exit(status);
     }
 
     public void exit() {
-        System.exit(0);
+        exit(0);
+    }
+
+    public static void main(String[] args) {
+        new App();
     }
 }

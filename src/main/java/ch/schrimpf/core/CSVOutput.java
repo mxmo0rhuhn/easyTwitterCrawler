@@ -25,6 +25,7 @@ import au.com.bytecode.opencsv.CSVWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Class to log tweets into a CSV file
@@ -33,7 +34,9 @@ import java.util.List;
  */
 public class CSVOutput {
 
+    private static final Logger LOG = Logger.getLogger(CSVOutput.class.getName());
     private final CSVWriter writer;
+
     public CSVOutput(String filename) throws IOException {
 
         writer = new CSVWriter(new FileWriter(filename, true));
@@ -43,17 +46,22 @@ public class CSVOutput {
     public void writeResult(List<String> result) {
         try {
             String[] entries;
+    private void writeResult(List<String> result) {
+        String[] entries;
+        entries = new String[result.size() + 1];
+        int i = 0;
+        for (String element : result) {
+            entries[i] = element;
+            i++;
+        }
+        writer.writeNext(entries);
+    }
 
-            entries = new String[result.size() + 1];
-            int i = 0;
-            for (String element : result) {
-                entries[i] = element;
-                i++;
-            }
-            writer.writeNext(entries);
+    public void close() {
+        try {
             writer.close();
         } catch (IOException e) {
-            e.printStackTrace(System.out);
+            LOG.severe("Could not close ouptut file");
         }
     }
 }
