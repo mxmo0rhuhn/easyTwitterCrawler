@@ -12,7 +12,7 @@ public class App
 
     /**
      * Provides the entrance point for the application.
-     * Reads the configuration and launches either the GUI or executes the program without GUI
+     * Reads the configuration and launches the crawler for a given time
      *
      * @author Max Schrimpf
      */
@@ -21,6 +21,9 @@ public class App
     public App() {
         // Your API key
         String apiKey = null;
+
+        // Your APIsecret
+        String apiSecret = null;
 
         // Mandatory Query that should be executed
         String query = null;
@@ -39,6 +42,8 @@ public class App
             prop.load(new FileInputStream("easyTwitterCrawler.properties"));
 
             apiKey = prop.getProperty("apiKey", apiKey);
+            apiSecret = prop.getProperty("apiSecret", apiSecret);
+
             query = prop.getProperty("query", query);
             duration = Integer.parseInt(prop.getProperty("duration", "" + duration));
             outputPath = prop.getProperty("outputPath", outputPath);
@@ -56,7 +61,18 @@ public class App
         LOG.log(Level.INFO, "outputPath = " + outputPath);
         LOG.log(Level.INFO, "duration = " + duration);
 
-        exit();
+        new TwitterCrawler(apiKey, apiSecret, query);
+
+        if (duration > 0) {
+            int sleepTime = duration * 1000 * 60;
+            try {
+                Thread.sleep(duration);
+                exit();
+            } catch(InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                exit();
+            }
+        }
     }
 
     public static void main(String[] args) {
