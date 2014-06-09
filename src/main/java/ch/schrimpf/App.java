@@ -23,6 +23,8 @@ package ch.schrimpf;
 import ch.schrimpf.core.AccessHandler;
 import ch.schrimpf.core.CSVOutput;
 import ch.schrimpf.core.TwitterCrawler;
+import twitter4j.Twitter;
+import twitter4j.TwitterException;
 import twitter4j.auth.AccessToken;
 
 import java.io.FileInputStream;
@@ -71,7 +73,6 @@ public class App {
         LOG.log(Level.INFO, "outputPath = " + outputPath);
         LOG.log(Level.INFO, "duration = " + duration);
 
-        AccessToken token = AccessHandler.loadToken();
         try {
             csvOutput = new CSVOutput(outputPath);
         } catch (IOException e) {
@@ -79,10 +80,12 @@ public class App {
             exit(1);
         }
 
-        if (token != null) {
-            crawler = new TwitterCrawler(token, query);
-        } else {
-            LOG.log(Level.SEVERE, "Could not get token - exiting");
+        try {
+            AccessHandler handler = new AccessHandler();
+            crawler = new TwitterCrawler(csvOutput, handler.connect(), query);
+        } catch (TwitterException e) {
+            LOG.severe(e.getMessage());
+            LOG.severe("Could not get token - exiting");
             exit(1);
         }
 

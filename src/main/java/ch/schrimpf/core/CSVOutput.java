@@ -44,9 +44,6 @@ public class CSVOutput {
     }
 
     public void writeResult(List<String> result) {
-        try {
-            String[] entries;
-    private void writeResult(List<String> result) {
         String[] entries;
         entries = new String[result.size() + 1];
         int i = 0;

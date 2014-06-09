@@ -13,16 +13,16 @@ public class TwitterCrawler implements Runnable {
     public static final int CRAWL_WINDOW_SIZE = 15 * 60 * 1000;
 
     private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(TwitterCrawler.class.getName());
-    private final Twitter twitter = new TwitterFactory().getInstance();
+    private final Twitter twitter;
     private final Query query;
     private final CSVOutput csv;
 
     private boolean running = false;
 
-    public TwitterCrawler(CSVOutput csv, AccessToken token, String query) {
+    public TwitterCrawler(CSVOutput csv, Twitter twitter, String query) {
         this.csv = csv;
+        this.twitter = twitter;
         this.query = new Query(query);
-        twitter.setOAuthAccessToken(token);
         new Thread(this).start();
     }
 
@@ -31,24 +31,19 @@ public class TwitterCrawler implements Runnable {
 
         running = true;
         while (running) {
-
             crwal(MAX_CRAWLS_PER_RUN);
-            if(running)
-            {
-                try {
-                    Thread.sleep(CRAWL_WINDOW_SIZE);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            try {
+                Thread.sleep(CRAWL_WINDOW_SIZE);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
 
-    public void crwal(int limit)
-    {
+    public void crwal(int limit) {
         int i = 0;
 
-        while(i < limit) {
+        while (i < limit) {
             try {
                 for (Status status : twitter.search(query).getTweets()) {
                     List<String> line = new ArrayList<>();
@@ -62,8 +57,7 @@ public class TwitterCrawler implements Runnable {
         }
     }
 
-    public void stop()
-    {
+    public void stop() {
         running = true;
     }
 }

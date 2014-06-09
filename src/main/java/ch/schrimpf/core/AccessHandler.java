@@ -13,12 +13,26 @@ import java.util.logging.Logger;
 
 public class AccessHandler {
 
+    Twitter twitter = new TwitterFactory().getInstance();
+
     private static final Logger LOG = Logger.getLogger(AccessHandler.class.getName());
 
-    public static AccessToken register(String key, String secret) throws TwitterException {
+    public Twitter connect() throws TwitterException {
+        Properties prop = new Properties();
+        try {
+            prop.load(new FileInputStream("api.key"));
+
+        } catch (IOException e) {
+            // Properties could not be load
+            throw new TwitterException("could not get api key properties");
+        }
+        twitter.setOAuthConsumer(prop.getProperty("apiKey"), prop.getProperty("apiSecret"));
+        twitter.setOAuthAccessToken(loadToken());
+        return twitter;
+    }
+
+    private AccessToken register() throws TwitterException {
         // The factory instance is re-useable and thread safe.
-        Twitter twitter = TwitterFactory.getSingleton();
-        twitter.setOAuthConsumer(key, secret);
         RequestToken requestToken = twitter.getOAuthRequestToken();
         AccessToken accessToken = null;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -55,7 +69,7 @@ public class AccessHandler {
         return accessToken;
     }
 
-    public static AccessToken loadToken() {
+    private AccessToken loadToken() throws TwitterException {
         try {
             FileInputStream fin = new FileInputStream("token.ser");
             ObjectInputStream ois = new ObjectInputStream(fin);
@@ -65,16 +79,6 @@ public class AccessHandler {
         } catch (IOException | ClassNotFoundException e) {
             LOG.log(Level.WARNING, "could not dematerialize stored token");
         }
-        Properties prop = new Properties();
-        try {
-            prop.load(new FileInputStream("api.key"));
-            return register(prop.getProperty("apiKey"), prop.getProperty("apiSecret"));
-        } catch (IOException e) {
-            // Properties could not be load
-            LOG.severe("could not get api key properties");
-        } catch (TwitterException e) {
-            LOG.severe("could not get new token");
-        }
-        return null;
+        return register();
     }
 }
