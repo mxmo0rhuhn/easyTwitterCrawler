@@ -1,5 +1,8 @@
 package ch.schrimpf;
 
+import ch.schrimpf.core.TwitterCrawler;
+import twitter4j.TwitterException;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
@@ -61,7 +64,11 @@ public class App
         LOG.log(Level.INFO, "outputPath = " + outputPath);
         LOG.log(Level.INFO, "duration = " + duration);
 
-        new TwitterCrawler(apiKey, apiSecret, query);
+        try {
+            new TwitterCrawler(apiKey, apiSecret, query);
+        } catch (TwitterException e) {
+            e.printStackTrace();
+        }
 
         if (duration > 0) {
             int sleepTime = duration * 1000 * 60;
