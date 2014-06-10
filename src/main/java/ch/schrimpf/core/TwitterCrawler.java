@@ -47,15 +47,15 @@ public class TwitterCrawler implements Runnable {
     private final CSVOutput csv;
 
     private boolean running = false;
-
     private int tweets = 0;
+    private long last = 0;
 
     /**
      * Instantiates a new TwitterCrawler and start it as e new thread.
      *
-     * @param csv to write in
+     * @param csv     to write in
      * @param twitter to crawl on
-     * @param query to execute
+     * @param query   to execute
      */
     public TwitterCrawler(CSVOutput csv, Twitter twitter, String query) {
         this.csv = csv;
@@ -65,12 +65,10 @@ public class TwitterCrawler implements Runnable {
     }
 
     /**
-     *
      * @param queryString describes keywords and filters
      * @return an initialized Query
      */
-    private Query initQuery(String queryString)
-    {
+    private Query initQuery(String queryString) {
         Query query = new Query(queryString);
         try {
             Properties prop = new Properties();
@@ -78,7 +76,7 @@ public class TwitterCrawler implements Runnable {
             query.setCount(Integer.parseInt(prop.getProperty("queryLimit")));
             query.setLocale(prop.getProperty("locale"));
             query.setLang(prop.getProperty("lang"));
-            GeoLocation location = new GeoLocation(Double.parseDouble(prop.getProperty("latitude")),Double.parseDouble(prop.getProperty("longitude")));
+            GeoLocation location = new GeoLocation(Double.parseDouble(prop.getProperty("latitude")), Double.parseDouble(prop.getProperty("longitude")));
             double radius = Double.parseDouble(prop.getProperty("radius"));
             query.setGeoCode(location, radius, Query.KILOMETERS);
         } catch (IOException e) {
@@ -114,7 +112,7 @@ public class TwitterCrawler implements Runnable {
      * Performs a single crawl step according to the previous initialized query
      * until the specified limit is reached. Received tweets are stored in the
      * *.csv specified in the easyTwitterCrawler.properties file.
-     *
+     * <p/>
      * TODO make selecting values flexible
      *
      * @param limit to stop on
@@ -124,10 +122,16 @@ public class TwitterCrawler implements Runnable {
         int i = 0;
         while (i < limit && running) {
             try {
-                for (Status status : twitter.search(query).getTweets()) {
-                    String[] line = {String.valueOf(status.getId()), String.valueOf(status.getCreatedAt()), status.getText(), String.valueOf(status.getUser()), String.valueOf(status.getPlace()), status.getLang()};
-                    csv.writeResult(Arrays.asList(line));
-                    i++;
+                QueryResult res = twitter.search(query);
+                if (res.getMaxId() > last) {
+                    for (Status status : res.getTweets()) {
+                        String[] line = {String.valueOf(status.getId()), String.valueOf(status.getCreatedAt()), status.getText(), String.valueOf(status.getUser()), String.valueOf(status.getPlace()), status.getLang()};
+                        csv.writeResult(Arrays.asList(line));
+                        i++;
+                    }
+                    last = res.getMaxId();
+                } else {
+                    break;
                 }
             } catch (TwitterException e) {
                 LOG.warning("could not process tweets");
